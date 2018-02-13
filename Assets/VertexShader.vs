@@ -18,20 +18,20 @@ uniform mat4 Perspective;
 uniform mat3 NormalMatrix;
 
 out VsOutFsIn {
-	vec3 position_ES; // Eye-space position
-	vec3 normal_ES;   // Eye-space normal
-	LightSource light;
+    vec3 position_ES; // Eye-space position
+    vec3 normal_ES;   // Eye-space normal
+    LightSource light;
 } vs_out;
 
 
 void main() {
-	vec4 pos4 = vec4(position, 1.0);
+    vec4 pos4 = vec4(position, 1.0);
 
-	//-- Convert position and normal to Eye-Space:
-	vs_out.position_ES = (ModelView * pos4).xyz;
-	vs_out.normal_ES = normalize(NormalMatrix * normal);
+    //-- Convert position and normal to Eye-Space:
+    vs_out.position_ES = (ModelView * pos4).xyz;
+    vs_out.normal_ES = normalize(NormalMatrix * normal);
 
-	vs_out.light = light;
+    vs_out.light = light;
 
-	gl_Position = Perspective * ModelView * vec4(position, 1.0);
+    gl_Position = Perspective * ModelView * vec4(position, 1.0);
 }
