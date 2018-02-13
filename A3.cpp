@@ -394,31 +394,50 @@ void A3::draw() {
     renderArcCircle();
 }
 
-void A3::renderSceneGraph(const SceneNode & root) {
+void A3::renderSceneGraph(const SceneNode &root) {
 
     glBindVertexArray(m_vao_meshData);
 
-    for (const SceneNode * node : root.children) {
-
-        if (node->m_nodeType == NodeType::SceneNode) {
-            renderSceneGraph( *node );
-        } else if (node->m_nodeType == NodeType::JointNode) {
-            renderJointGraph( *node );
-        } else if (node->m_nodeType == NodeType::GeometryNode) {
-            renderGeometryGraph( *node );
-        }
-    }
+    renderSceneGraph( &root, m_view );
 
     glBindVertexArray(0);
     CHECK_GL_ERRORS;
 }
-void A3::renderJointGraph(const SceneNode & root) {
 
+void A3::renderSceneGraph(const SceneNode *root, glm::mat4 M) {
+
+    M = M * root->trans;
+
+    for (const SceneNode * node : root->children) {
+        if (node->m_nodeType == NodeType::SceneNode) {
+            renderSceneGraph( node, M );
+        } else if (node->m_nodeType == NodeType::JointNode) {
+            renderJointGraph( node, M );
+        } else if (node->m_nodeType == NodeType::GeometryNode) {
+            renderGeometryGraph( node, M );
+        }
+    }
 }
-void A3::renderGeometryGraph(const SceneNode & root) {
-    const GeometryNode * geometryNode = static_cast<const GeometryNode *>(&root);
 
-    updateShaderUniforms(m_shader, *geometryNode, m_view);
+void A3::renderJointGraph(const SceneNode *root, glm::mat4 M ) {
+
+    M = M * root->trans;
+
+    for (const SceneNode * node : root->children) {
+        if (node->m_nodeType == NodeType::SceneNode) {
+            renderSceneGraph( node, M );
+        } else if (node->m_nodeType == NodeType::JointNode) {
+            renderJointGraph( node, M );
+        } else if (node->m_nodeType == NodeType::GeometryNode) {
+            renderGeometryGraph( node, M );
+        }
+    }
+}
+
+void A3::renderGeometryGraph(const SceneNode *root, glm::mat4 M ) {
+    const GeometryNode * geometryNode = static_cast<const GeometryNode *>(root);
+
+    updateShaderUniforms(m_shader, *geometryNode, M);
 
 
     // Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
@@ -430,49 +449,6 @@ void A3::renderGeometryGraph(const SceneNode & root) {
     m_shader.disable();
 
 }
-//----------------------------------------------------------------------------------------
-/*
-void A3::renderSceneGraph(const SceneNode & root) {
-
-    // Bind the VAO once here, and reuse for all GeometryNode rendering below.
-    glBindVertexArray(m_vao_meshData);
-
-    // This is emphatically *not* how you should be drawing the scene graph in
-    // your final implementation.  This is a non-hierarchical demonstration
-    // in which we assume that there is a list of GeometryNodes living directly
-    // underneath the root node, and that we can draw them in a loop.  It's
-    // just enough to demonstrate how to get geometry and materials out of
-    // a GeometryNode and onto the screen.
-
-    // You'll want to turn this into recursive code that walks over the tree.
-    // You can do that by putting a method in SceneNode, overridden in its
-    // subclasses, that renders the subtree rooted at every node.  Or you
-    // could put a set of mutually recursive functions in this class, which
-    // walk down the tree from nodes of different types.
-
-    for (const SceneNode * node : root.children) {
-
-        if (node->m_nodeType != NodeType::GeometryNode)
-            continue;
-
-        const GeometryNode * geometryNode = static_cast<const GeometryNode *>(node);
-
-        updateShaderUniforms(m_shader, *geometryNode, m_view);
-
-
-        // Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
-        BatchInfo batchInfo = m_batchInfoMap[geometryNode->meshId];
-
-        //-- Now render the mesh:
-        m_shader.enable();
-        glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
-        m_shader.disable();
-    }
-
-    glBindVertexArray(0);
-    CHECK_GL_ERRORS;
-}
-*/
 
 //----------------------------------------------------------------------------------------
 // Draw the trackball circle.
