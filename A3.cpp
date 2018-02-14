@@ -13,11 +13,15 @@ using namespace std;
 #include <glm/gtx/io.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <cassert>
+
 using namespace glm;
 
 static bool show_gui = true;
 
 const size_t CIRCLE_PTS = 48;
+
+static int interaction_radio = 0;
 
 //----------------------------------------------------------------------------------------
 // Constructor
@@ -29,8 +33,14 @@ A3::A3(const std::string & luaSceneFile)
       m_vbo_vertexPositions(0),
       m_vbo_vertexNormals(0),
       m_vao_arcCircle(0),
-      m_vbo_arcCircle(0)
+      m_vbo_arcCircle(0),
+
+      m_sphereNode( nullptr ),
+      m_left_mouse_key_down( false ),
+      m_middle_mouse_key_down( false ),
+      m_right_mouse_key_down( false )
 {
+    resetAll();
 
 }
 
@@ -104,6 +114,9 @@ void A3::processLuaSceneFile(const std::string & filename) {
     if (!m_rootNode) {
         std::cerr << "Could not open " << filename << std::endl;
     }
+    assert( m_rootNode->children.size() == 1);
+    m_sphereNode = m_rootNode->children.front();
+
 }
 
 //----------------------------------------------------------------------------------------
@@ -327,12 +340,31 @@ void A3::guiLogic()
 
 
         // Add more gui elements here here ...
+        ImGui::Text( "\n -- Application -- " );
+        if( ImGui::Button( "Reset Position (I)" ) ) { resetPosition(); }
+        if( ImGui::Button( "Reset Orientation (O)" ) ) { resetOrientation(); }
+        if( ImGui::Button( "Reset Joints (N)" ) ) { resetJoints(); }
+        if( ImGui::Button( "Reset All(A)" ) ) { resetAll(); }
+        if( ImGui::Button( "Quit Application" ) ) { glfwSetWindowShouldClose(m_window, GL_TRUE); }
 
+        ImGui::Text( "\n -- Edit -- " );
+        if( ImGui::Button( "Undo (U)" ) ) { undo(); }
+        if( ImGui::Button( "Redo (R)" ) ) { redo(); }
 
-        // Create Button, and check if it was clicked:
-        if( ImGui::Button( "Quit Application" ) ) {
-            glfwSetWindowShouldClose(m_window, GL_TRUE);
+        ImGui::Text( "\n -- Options -- " );
+        if( ImGui::Button( "Circle (C)" ) ) { undo(); }
+        if( ImGui::Button( "Z-buffer(Z)" ) ) { undo(); }
+        if( ImGui::Button( "Backface culling (B)" ) ) { undo(); }
+        if( ImGui::Button( "Frontface culling (F)" ) ) { undo(); }
+
+        ImGui::Text( "\n -- Interaction Mode -- " );
+        if ( ImGui::RadioButton( "Position/Orientation (P)", &interaction_radio, 0 ) ) {
+            m_interaction_mode = 'P';
         }
+        if ( ImGui::RadioButton( "Joints (J)", &interaction_radio, 1 ) ) {
+            m_interaction_mode = 'J';
+        }
+
 
         ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 
@@ -407,7 +439,6 @@ void A3::renderSceneGraph(const SceneNode &root) {
 void A3::renderSceneGraph(const SceneNode *root, glm::mat4 M) {
 
     M = M * root->trans;
-
     for (const SceneNode * node : root->children) {
         if (node->m_nodeType == NodeType::SceneNode) {
             renderSceneGraph( node, M );
@@ -422,7 +453,6 @@ void A3::renderSceneGraph(const SceneNode *root, glm::mat4 M) {
 void A3::renderJointGraph(const SceneNode *root, glm::mat4 M ) {
 
     M = M * root->trans;
-
     for (const SceneNode * node : root->children) {
         if (node->m_nodeType == NodeType::SceneNode) {
             renderSceneGraph( node, M );
@@ -448,6 +478,16 @@ void A3::renderGeometryGraph(const SceneNode *root, glm::mat4 M ) {
     glDrawArrays(GL_TRIANGLES, batchInfo.startIndex, batchInfo.numIndices);
     m_shader.disable();
 
+    M = M * root->trans;
+    for (const SceneNode * node : root->children) {
+        if (node->m_nodeType == NodeType::SceneNode) {
+            renderSceneGraph( node, M );
+        } else if (node->m_nodeType == NodeType::JointNode) {
+            renderJointGraph( node, M );
+        } else if (node->m_nodeType == NodeType::GeometryNode) {
+            renderGeometryGraph( node, M );
+        }
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -505,7 +545,35 @@ bool A3::mouseMoveEvent (
 ) {
     bool eventHandled(false);
 
-    // Fill in with event handling code...
+    if ( !ImGui::IsMouseHoveringAnyWindow() ) {
+
+        float delta_x = xPos - m_mouse_x;
+        float delta_y = yPos - m_mouse_y;
+        m_mouse_x = xPos;
+        m_mouse_y = yPos;
+
+        if ( m_interaction_mode == 'P' ) {
+
+            if( m_left_mouse_key_down ) {
+                mat4 trans;
+                trans = glm::translate(trans, vec3(delta_x/250, -delta_y/200, 0));
+                m_view = trans*m_view;
+            }
+
+            if( m_middle_mouse_key_down ) {
+                mat4 trans;
+                trans = glm::translate(trans, vec3(0, 0, delta_y/100));
+                m_view = trans*m_view;
+            }
+
+            if( m_right_mouse_key_down ) {
+                m_sphereNode->rotate('y', delta_x);
+                m_sphereNode->rotate('x', delta_y);
+            }
+
+        }
+
+    }
 
     return eventHandled;
 }
@@ -521,7 +589,39 @@ bool A3::mouseButtonInputEvent (
 ) {
     bool eventHandled(false);
 
-    // Fill in with event handling code...
+    if ( !ImGui::IsMouseHoveringAnyWindow() ) {
+
+        if ( button == GLFW_MOUSE_BUTTON_LEFT && actions == GLFW_PRESS ) {
+            m_left_mouse_key_down = true;
+            eventHandled = true;
+        }
+
+        if ( button == GLFW_MOUSE_BUTTON_LEFT && actions == GLFW_RELEASE ) {
+            m_left_mouse_key_down = false;
+            eventHandled = true;
+        }
+
+        if ( button == GLFW_MOUSE_BUTTON_MIDDLE && actions == GLFW_PRESS ) {
+            m_middle_mouse_key_down = true;
+            eventHandled = true;
+        }
+
+        if ( button == GLFW_MOUSE_BUTTON_MIDDLE && actions == GLFW_RELEASE ) {
+            m_middle_mouse_key_down = false;
+            eventHandled = true;
+        }
+
+        if ( button == GLFW_MOUSE_BUTTON_RIGHT && actions == GLFW_PRESS ) {
+            m_right_mouse_key_down = true;
+            eventHandled = true;
+        }
+
+        if ( button == GLFW_MOUSE_BUTTON_RIGHT && actions == GLFW_RELEASE ) {
+            m_right_mouse_key_down = false;
+            eventHandled = true;
+        }
+
+    }
 
     return eventHandled;
 }
@@ -581,3 +681,26 @@ bool A3::keyInputEvent (
 
     return eventHandled;
 }
+
+void A3::resetPosition() {
+    initViewMatrix();
+}
+
+void A3::resetOrientation() {
+    m_sphereNode->reset_transform();
+}
+
+void A3::resetJoints() {
+
+}
+
+void A3::resetAll() {
+    m_interaction_mode = 'P';
+    interaction_radio = 0;
+
+    resetPosition();
+    if ( m_sphereNode != nullptr ) resetOrientation();
+    resetJoints();
+}
+void A3::undo() {}
+void A3::redo() {}

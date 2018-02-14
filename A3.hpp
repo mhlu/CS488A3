@@ -55,6 +55,22 @@ protected:
     void renderGeometryGraph(const SceneNode *node, glm::mat4 M );
     void renderArcCircle();
 
+    void resetPosition();
+    void resetOrientation();
+    void resetJoints();
+    void resetAll();
+    void undo();
+    void redo();
+
+    char m_interaction_mode;
+    float m_mouse_x;
+    float m_mouse_y;
+    bool m_left_mouse_key_down;
+    bool m_middle_mouse_key_down;
+    bool m_right_mouse_key_down;
+
+
+
     glm::mat4 m_perpsective;
     glm::mat4 m_view;
 
@@ -82,4 +98,5 @@ protected:
     std::string m_luaSceneFile;
 
     std::shared_ptr<SceneNode> m_rootNode;
+    SceneNode* m_sphereNode;
 };

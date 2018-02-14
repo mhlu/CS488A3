@@ -24,7 +24,7 @@ SceneNode::SceneNode(const std::string& name)
     isSelected(false),
     m_nodeId(nodeInstanceCount++)
 {
-
+    invtrans = glm::inverse(trans );
 }
 
 //---------------------------------------------------------------------------------------
@@ -50,7 +50,13 @@ SceneNode::~SceneNode() {
 //---------------------------------------------------------------------------------------
 void SceneNode::set_transform(const glm::mat4& m) {
     trans = m;
-    invtrans = m;
+    invtrans = glm::inverse(trans);
+}
+
+//---------------------------------------------------------------------------------------
+void SceneNode::reset_transform() {
+    trans = glm::mat4();
+    invtrans = glm::mat4();
 }
 
 //---------------------------------------------------------------------------------------
@@ -92,16 +98,19 @@ void SceneNode::rotate(char axis, float angle) {
     }
     mat4 rot_matrix = glm::rotate(degreesToRadians(angle), rot_axis);
     trans = rot_matrix * trans;
+    invtrans = glm::inverse(trans);
 }
 
 //---------------------------------------------------------------------------------------
 void SceneNode::scale(const glm::vec3 & amount) {
     trans = glm::scale(amount) * trans;
+    invtrans = glm::inverse(trans);
 }
 
 //---------------------------------------------------------------------------------------
 void SceneNode::translate(const glm::vec3& amount) {
     trans = glm::translate(amount) * trans;
+    invtrans = glm::inverse(trans);
 }
 
 

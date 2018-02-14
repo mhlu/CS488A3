@@ -28,6 +28,7 @@ public:
     const glm::mat4& get_inverse() const;
 
     void set_transform(const glm::mat4& m);
+    void reset_transform();
 
     void add_child(SceneNode* child);
 
