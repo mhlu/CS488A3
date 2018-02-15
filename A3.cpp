@@ -379,6 +379,11 @@ void A3::guiLogic()
             m_interaction_mode = 'J';
         }
 
+        if ( m_message.length() != 0 ) {
+            ImGui::Text( "\n -- Message -- " );
+            ImGui::Text( "%s",  m_message.c_str() );
+        }
+
 
         ImGui::Text( "Framerate: %.1f FPS", ImGui::GetIO().Framerate );
 
@@ -848,6 +853,26 @@ bool A3::keyInputEvent (
             eventHandled = true;
         }
 
+        if ( key == GLFW_KEY_I ) {
+            resetPosition();
+            eventHandled = true;
+        }
+
+        if ( key == GLFW_KEY_O ) {
+            resetOrientation();
+            eventHandled = true;
+        }
+
+        if ( key == GLFW_KEY_N ) {
+            resetJoints();
+            eventHandled = true;
+        }
+
+        if ( key == GLFW_KEY_A ) {
+            resetAll();
+            eventHandled = true;
+        }
+
         if ( key == GLFW_KEY_Q ) {
             glfwSetWindowShouldClose(m_window, GL_TRUE);
             eventHandled = true;
@@ -865,6 +890,32 @@ bool A3::keyInputEvent (
             eventHandled = true;
         }
 
+        if ( key == GLFW_KEY_U ) {
+            undo();
+            eventHandled = true;
+        }
+
+        if ( key == GLFW_KEY_R ) {
+            redo();
+            eventHandled = true;
+        }
+
+        if ( key == GLFW_KEY_C ) {
+            m_display_arc = !m_display_arc;
+            eventHandled = true;
+        }
+        if ( key == GLFW_KEY_Z ) {
+            m_z_buffer = !m_z_buffer;
+            eventHandled = true;
+        }
+        if ( key == GLFW_KEY_B ) {
+            m_backface_culling = !m_backface_culling;
+            eventHandled = true;
+        }
+        if ( key == GLFW_KEY_F ) {
+            m_frontface_culling = !m_frontface_culling;
+            eventHandled = true;
+        }
     }
 
     return eventHandled;
@@ -898,7 +949,10 @@ void A3::resetOrientation() {
 }
 
 void A3::resetJoints() {
-    m_cmd_index = 0;
+    while ( m_cmd_index != 0 ) {
+        m_cmds[ m_cmd_index-1].undo();
+        m_cmd_index -= 1;
+    }
     m_cmds.clear();
 }
 
@@ -917,17 +971,22 @@ void A3::resetAll() {
     m_frontface_culling = false;
 
     m_cmd_index = 0;
+    m_message = "";
 }
 void A3::undo() {
     if ( m_cmd_index > 0 ) {
         m_cmd_index -= 1;
         m_cmds[ m_cmd_index ].undo();
+    } else {
+        m_message = "No More Actions To Undo";
     }
 }
 void A3::redo() {
     if ( m_cmd_index < m_cmds.size() ) {
         m_cmds[ m_cmd_index ].redo();
         m_cmd_index += 1;
+    } else {
+        m_message = "No More Actions To Redo";
     }
 }
 

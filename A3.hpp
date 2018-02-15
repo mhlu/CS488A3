@@ -94,6 +94,8 @@ protected:
     bool m_backface_culling;
     bool m_frontface_culling;
 
+    std::string m_message;
+
     std::set<SceneNode*> m_selected_joints;
 
 
