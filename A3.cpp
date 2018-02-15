@@ -630,11 +630,18 @@ bool A3::mouseMoveEvent (
 
             if( m_middle_mouse_key_down ) {
                 for( auto node: m_selected_joints ) {
-                    node->rotate( delta_y/50*2*3.1415926 );
+                    node->rotate( 'x', delta_y/50*2*3.1415926 );
                 }
-
             }
 
+            if( m_right_mouse_key_down ) {
+                for( auto node: m_selected_joints ) {
+                    if ( node->m_name == "upper_neck_joint" ) {
+                        auto head = node->children.front();
+                        head->rotate( 'y', delta_x/50*2*3.1415926 );
+                    }
+                }
+            }
         }
 
     }
@@ -740,13 +747,11 @@ bool A3::mouseButtonInputEvent (
 
                     JointNode *joint = (JointNode*) body_part->parent;
                     if ( !joint->isSelected ) {
-                        cout<< joint << "is selected" <<endl;
                         m_selected_joints.insert( joint );
                         joint->isSelected = true;
                         joint->parent->isSelected = true;
 
                     } else {
-                        cout<< joint << "is deselected" <<endl;
                         m_selected_joints.erase( joint );
                         joint->isSelected = false;
                         joint->parent->isSelected = false;

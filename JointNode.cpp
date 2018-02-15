@@ -40,8 +40,6 @@ void JointNode::set_joint_y(double min, double init, double max) {
 void JointNode::rotate( char axis, float angle ) {
     vec3 rot_axis;
 
-    cout<<"hi"<<endl;
-
     switch (axis) {
         case 'x':
 
@@ -78,10 +76,4 @@ void JointNode::rotate( char axis, float angle ) {
     mat4 rot_matrix = glm::rotate(degreesToRadians(angle), rot_axis);
     trans = rot_matrix * trans;
     invtrans = glm::inverse(trans);
-}
-
-void JointNode::rotate( float angle ) {
-    for( char axis : string("xy") ) {
-        rotate( axis, angle );
-    }
 }

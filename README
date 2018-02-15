@@ -1,0 +1,45 @@
+Compilation:
+    - no changes from default
+
+premake4 clean
+premake4 gmake
+make
+./A3 puppet.lua
+
+Manual:
+
+    - puppet file
+        my puppet file is named "puppet.lua" and is directly in the
+        assginements root folder itself it is NOT in Assets/ folder
+        ./puppet.lua
+
+    - Arc Ball
+        For the Arcball Manipulation, I referenced
+        https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
+
+    - Selection
+        From the assignment "A joint is selected by clicking on part
+        of the geometry immediately beneath it" "Clicking on geometry
+        not immediately under a moveable joint should have no effect."
+
+        I followed this exactly, so the joints in my puppet CANNOT be
+        selected by clicking on the joint geometry itself. The picking
+        has to be on the body part geometry beneath the joint. All joints
+        are blue, all geometry are green. Only exception are eyes
+        which are geometry and blue.
+
+    - Head Movement
+        Continuing with the selection logic before. There is a joint at
+        the bottom of the neck, which can be selected by clicking on the
+        neck itself, and has 1 degree of freedom.
+
+        There is a joint at the top of the neck, which can be selected by
+        clicking on the head, and has two degrees of freedom.
+
+        Up and down movement, which is controlled by middle mouse moving up and down.
+        Left and right movement, which is controlled by right mouse moving left and right.
+
+        The actually implementation of the rotation at the head is broken up into the
+        upper neck joint and the head geometry to avoid problems when both d.o.f are
+        used. But this is hidden from the user.
+
