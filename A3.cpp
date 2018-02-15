@@ -634,12 +634,18 @@ bool A3::mouseMoveEvent (
 
                 float angle = acos( std::min(1.0f, dot(va, vb)) ) / 10;
                 vec3 axis_in_camera_coord = cross(va, vb);
-                vec4 axis_in_view_frame( axis_in_camera_coord, 0 );
-                vec4 axis_in_world_frame = inverse( m_view ) * axis_in_view_frame;
 
-                mat4 rot;
-                rot = rotate( rot, degrees(angle), vec3(axis_in_world_frame) );
-                m_sphereNode->trans = rot * m_sphereNode->trans;
+                if ( abs(axis_in_camera_coord.x) > 1e-5 ||
+                        abs(axis_in_camera_coord.y) > 1e-5 ||
+                        abs(axis_in_camera_coord.z) > 13-5) {
+                    vec4 axis_in_view_frame( axis_in_camera_coord, 0 );
+                    vec4 axis_in_world_frame = inverse( m_view ) * axis_in_view_frame;
+
+                    mat4 rot;
+                    rot = rotate( rot, degrees(angle), vec3(axis_in_world_frame) );
+                    m_sphereNode->trans = rot * m_sphereNode->trans;
+                }
+
 
                 eventHandled = true;
             }
