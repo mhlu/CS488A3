@@ -22,7 +22,8 @@ SceneNode::SceneNode(const std::string& name)
     m_nodeType(NodeType::SceneNode),
     trans(mat4()),
     isSelected(false),
-    m_nodeId(nodeInstanceCount++)
+    m_nodeId(nodeInstanceCount++),
+    parent( nullptr )
 {
     invtrans = glm::inverse(trans );
 }
@@ -72,11 +73,28 @@ const glm::mat4& SceneNode::get_inverse() const {
 //---------------------------------------------------------------------------------------
 void SceneNode::add_child(SceneNode* child) {
     children.push_back(child);
+    child->parent = this;
 }
 
 //---------------------------------------------------------------------------------------
 void SceneNode::remove_child(SceneNode* child) {
     children.remove(child);
+    child->parent = nullptr;
+}
+
+//---------------------------------------------------------------------------------------
+SceneNode* SceneNode::get_child_by_id(unsigned int id) {
+
+    if ( m_nodeId == id )
+        return this;
+
+    SceneNode* res = nullptr;
+    for ( SceneNode* child : children ) {
+        res = child->get_child_by_id( id );
+        if ( res != nullptr )
+            break;
+    }
+    return res;
 }
 
 //---------------------------------------------------------------------------------------

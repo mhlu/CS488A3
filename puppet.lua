@@ -13,12 +13,12 @@ white = gr.material( {1.0, 1.0, 1.0}, {0.1, 0.1, 0.1}, 10 )
 
 torso_geo = gr.mesh( 'cube', 'torso_geo' )
 ball_node:add_child( torso_geo )
-torso_geo:set_material( red )
+torso_geo:set_material( green )
 torso_geo:scale( 1, 1, 0.5 )
 
 shoulder_geo = gr.mesh( 'cube', 'shoulder_geo' )
 torso_geo:add_child( shoulder_geo )
-shoulder_geo:set_material( red )
+shoulder_geo:set_material( green )
 shoulder_geo:scale( 1.0, 1.0, 1/0.5 )
 shoulder_geo:scale( 2, 0.2, 0.5 )
 shoulder_geo:translate( 0, 0.6, 0 )
@@ -49,7 +49,7 @@ head_joint:add_child( head_geo )
 head_geo:scale( 1/0.1, 1/0.1, 1/0.1 )
 head_geo:scale( 0.4, 0.4, 0.4 )
 head_geo:translate( 0.0, 2.5, 0.0 )
-head_geo:set_material( white )
+head_geo:set_material( green )
 
 
 -- shoulder + arms ----------------------------------------------------------------
@@ -129,7 +129,7 @@ right_shoulder_geo:add_child( right_arm )
 
 hip_geo = gr.mesh( 'cube', 'hip_geo' )
 torso_geo:add_child( hip_geo )
-hip_geo:set_material( white )
+hip_geo:set_material( green )
 hip_geo:scale( 1.0, 1.0, 1/0.5 )
 hip_geo:scale( 1, 0.2, 1 )
 hip_geo:translate( 0, -0.5, 0 )

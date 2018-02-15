@@ -283,22 +283,26 @@ void A3::uploadCommonSceneUniforms() {
         glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(m_perpsective));
         CHECK_GL_ERRORS;
 
+        location = m_shader.getUniformLocation("picking");
+        glUniform1i( location, m_do_picking ? 1 : 0 );
 
-        //-- Set LightSource uniform for the scene:
-        {
-            location = m_shader.getUniformLocation("light.position");
-            glUniform3fv(location, 1, value_ptr(m_light.position));
-            location = m_shader.getUniformLocation("light.rgbIntensity");
-            glUniform3fv(location, 1, value_ptr(m_light.rgbIntensity));
-            CHECK_GL_ERRORS;
-        }
+        if( !m_do_picking ) {
+            //-- Set LightSource uniform for the scene:
+            {
+                location = m_shader.getUniformLocation("light.position");
+                glUniform3fv(location, 1, value_ptr(m_light.position));
+                location = m_shader.getUniformLocation("light.rgbIntensity");
+                glUniform3fv(location, 1, value_ptr(m_light.rgbIntensity));
+                CHECK_GL_ERRORS;
+            }
 
-        //-- Set background light ambient intensity
-        {
-            location = m_shader.getUniformLocation("ambientIntensity");
-            vec3 ambientIntensity(0.05f);
-            glUniform3fv(location, 1, value_ptr(ambientIntensity));
-            CHECK_GL_ERRORS;
+            //-- Set background light ambient intensity
+            {
+                location = m_shader.getUniformLocation("ambientIntensity");
+                vec3 ambientIntensity(0.05f);
+                glUniform3fv(location, 1, value_ptr(ambientIntensity));
+                CHECK_GL_ERRORS;
+            }
         }
     }
     m_shader.disable();
@@ -376,7 +380,8 @@ void A3::guiLogic()
 static void updateShaderUniforms(
         const ShaderProgram & shader,
         const GeometryNode & node,
-        const glm::mat4 & viewMatrix
+        const glm::mat4 & viewMatrix,
+        const bool do_picking
 ) {
 
     shader.enable();
@@ -387,25 +392,43 @@ static void updateShaderUniforms(
         glUniformMatrix4fv(location, 1, GL_FALSE, value_ptr(modelView));
         CHECK_GL_ERRORS;
 
-        //-- Set NormMatrix:
-        location = shader.getUniformLocation("NormalMatrix");
-        mat3 normalMatrix = glm::transpose(glm::inverse(mat3(modelView)));
-        glUniformMatrix3fv(location, 1, GL_FALSE, value_ptr(normalMatrix));
-        CHECK_GL_ERRORS;
+        if ( do_picking ) {
+
+            unsigned int idx = node.m_nodeId;
+            float r = float(idx&0xff) / 255.0f;
+            float g = float((idx>>8)&0xff) / 255.0f;
+            float b = float((idx>>16)&0xff) / 255.0f;
+
+            location = shader.getUniformLocation("material.kd");
+            glUniform3f( location, r, g, b );
+            CHECK_GL_ERRORS;
+
+        } else {
+            //-- Set NormMatrix:
+            location = shader.getUniformLocation("NormalMatrix");
+            mat3 normalMatrix = glm::transpose(glm::inverse(mat3(modelView)));
+            glUniformMatrix3fv(location, 1, GL_FALSE, value_ptr(normalMatrix));
+            CHECK_GL_ERRORS;
 
 
-        //-- Set Material values:
-        location = shader.getUniformLocation("material.kd");
-        vec3 kd = node.material.kd;
-        glUniform3fv(location, 1, value_ptr(kd));
-        CHECK_GL_ERRORS;
-        location = shader.getUniformLocation("material.ks");
-        vec3 ks = node.material.ks;
-        glUniform3fv(location, 1, value_ptr(ks));
-        CHECK_GL_ERRORS;
-        location = shader.getUniformLocation("material.shininess");
-        glUniform1f(location, node.material.shininess);
-        CHECK_GL_ERRORS;
+            //-- Set Material values:
+            location = shader.getUniformLocation("material.kd");
+            vec3 kd = node.material.kd;
+
+            if ( node.isSelected ) {
+                kd = vec3(0.9, 0.2, 0.2);
+            }
+
+            glUniform3fv(location, 1, value_ptr(kd));
+            CHECK_GL_ERRORS;
+            location = shader.getUniformLocation("material.ks");
+            vec3 ks = node.material.ks;
+            glUniform3fv(location, 1, value_ptr(ks));
+            CHECK_GL_ERRORS;
+            location = shader.getUniformLocation("material.shininess");
+            glUniform1f(location, node.material.shininess);
+            CHECK_GL_ERRORS;
+        }
 
     }
     shader.disable();
@@ -467,7 +490,7 @@ void A3::renderJointGraph(const SceneNode *root, glm::mat4 M ) {
 void A3::renderGeometryGraph(const SceneNode *root, glm::mat4 M ) {
     const GeometryNode * geometryNode = static_cast<const GeometryNode *>(root);
 
-    updateShaderUniforms(m_shader, *geometryNode, M);
+    updateShaderUniforms(m_shader, *geometryNode, M, m_do_picking);
 
 
     // Get the BatchInfo corresponding to the GeometryNode's unique MeshId.
@@ -591,34 +614,109 @@ bool A3::mouseButtonInputEvent (
 
     if ( !ImGui::IsMouseHoveringAnyWindow() ) {
 
+        double xPos, yPos;
+        glfwGetCursorPos( m_window, &xPos, &yPos );
+
         if ( button == GLFW_MOUSE_BUTTON_LEFT && actions == GLFW_PRESS ) {
+            m_mouse_x = xPos;
+            m_mouse_y = yPos;
             m_left_mouse_key_down = true;
             eventHandled = true;
         }
 
         if ( button == GLFW_MOUSE_BUTTON_LEFT && actions == GLFW_RELEASE ) {
+            m_mouse_x = xPos;
+            m_mouse_y = yPos;
             m_left_mouse_key_down = false;
             eventHandled = true;
         }
 
         if ( button == GLFW_MOUSE_BUTTON_MIDDLE && actions == GLFW_PRESS ) {
+            m_mouse_x = xPos;
+            m_mouse_y = yPos;
             m_middle_mouse_key_down = true;
             eventHandled = true;
         }
 
         if ( button == GLFW_MOUSE_BUTTON_MIDDLE && actions == GLFW_RELEASE ) {
+            m_mouse_x = xPos;
+            m_mouse_y = yPos;
             m_middle_mouse_key_down = false;
             eventHandled = true;
         }
 
         if ( button == GLFW_MOUSE_BUTTON_RIGHT && actions == GLFW_PRESS ) {
+            m_mouse_x = xPos;
+            m_mouse_y = yPos;
             m_right_mouse_key_down = true;
             eventHandled = true;
         }
 
         if ( button == GLFW_MOUSE_BUTTON_RIGHT && actions == GLFW_RELEASE ) {
+            m_mouse_x = xPos;
+            m_mouse_y = yPos;
             m_right_mouse_key_down = false;
             eventHandled = true;
+        }
+
+
+        if ( m_interaction_mode == 'J' ) {
+            if (button == GLFW_MOUSE_BUTTON_LEFT && actions == GLFW_PRESS) {
+
+                m_do_picking = true;
+
+                uploadCommonSceneUniforms();
+                glClearColor(1.0, 1.0, 1.0, 1.0 );
+                glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+                glClearColor(0.35, 0.35, 0.35, 1.0);
+
+                draw();
+                // I don't know if these are really necessary anymore.
+                // glFlush();
+                // glFinish();
+                CHECK_GL_ERRORS;
+
+                xPos *= double(m_framebufferWidth) / double(m_windowWidth);
+                yPos = m_windowHeight - yPos;
+                yPos *= double(m_framebufferHeight) / double(m_windowHeight);
+
+                GLubyte buffer[ 4 ] = { 0, 0, 0, 0 };
+                glReadBuffer( GL_BACK );
+                glReadPixels( int(xPos), int(yPos), 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
+                CHECK_GL_ERRORS;
+
+                // Reassemble the object ID.
+                unsigned int obj_id = buffer[0] + (buffer[1] << 8) + (buffer[2] << 16);
+
+                SceneNode* body_part = m_rootNode->get_child_by_id( obj_id );
+
+                // a node is selected and direct parent is a joint
+                if ( nullptr != body_part
+                         && nullptr != body_part->parent
+                         && NodeType::JointNode == body_part->parent->m_nodeType ) {
+
+                    assert( nullptr != body_part->parent->parent );
+
+                    JointNode *joint = (JointNode*) body_part->parent;
+                    if ( !joint->isSelected ) {
+                        cout<< joint << "is selected" <<endl;
+                        m_selected_joints.insert( joint );
+                        joint->isSelected = true;
+                        joint->parent->isSelected = true;
+
+                    } else {
+                        cout<< joint << "is deselected" <<endl;
+                        m_selected_joints.erase( joint );
+                        joint->isSelected = false;
+                        joint->parent->isSelected = false;
+
+                    }
+                }
+
+                m_do_picking = false;
+
+                CHECK_GL_ERRORS;
+            }
         }
 
     }
@@ -697,10 +795,13 @@ void A3::resetJoints() {
 void A3::resetAll() {
     m_interaction_mode = 'P';
     interaction_radio = 0;
+    m_do_picking = false;
 
     resetPosition();
     if ( m_sphereNode != nullptr ) resetOrientation();
     resetJoints();
 }
-void A3::undo() {}
-void A3::redo() {}
+void A3::undo() {
+}
+void A3::redo() {
+}

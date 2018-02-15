@@ -12,6 +12,8 @@
 #include <glm/glm.hpp>
 #include <memory>
 
+#include <set>
+
 struct LightSource {
     glm::vec3 position;
     glm::vec3 rgbIntensity;
@@ -68,6 +70,9 @@ protected:
     bool m_left_mouse_key_down;
     bool m_middle_mouse_key_down;
     bool m_right_mouse_key_down;
+    bool m_do_picking;
+
+    std::set<JointNode*> m_selected_joints;
 
 
 
