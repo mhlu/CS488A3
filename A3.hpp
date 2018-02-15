@@ -12,6 +12,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 
+#include <vector>
 #include <set>
 
 struct LightSource {
@@ -19,6 +20,20 @@ struct LightSource {
     glm::vec3 rgbIntensity;
 };
 
+
+class RotCommand {
+public:
+    RotCommand( std::set<SceneNode*> nodes, char axis, float angle );
+    RotCommand( std::set<SceneNode*> nodes );
+    void update( char axis, float angle );
+    void redo();
+    void undo();
+
+
+    std::vector<SceneNode*> m_node;
+    std::vector<glm::mat4> m_initial;
+    std::vector<glm::mat4> m_final;
+};
 
 class A3 : public CS488Window {
 public:
@@ -79,7 +94,7 @@ protected:
     bool m_backface_culling;
     bool m_frontface_culling;
 
-    std::set<JointNode*> m_selected_joints;
+    std::set<SceneNode*> m_selected_joints;
 
 
 
@@ -111,4 +126,7 @@ protected:
 
     std::shared_ptr<SceneNode> m_rootNode;
     SceneNode* m_sphereNode;
+
+    unsigned int m_cmd_index;
+    std::vector<RotCommand> m_cmds;
 };

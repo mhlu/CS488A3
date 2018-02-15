@@ -636,8 +636,6 @@ bool A3::mouseMoveEvent (
                 rot = rotate( rot, degrees(angle), vec3(axis_in_world_frame) );
                 m_sphereNode->trans = rot * m_sphereNode->trans;
 
-                cout<<"rot: "<<rot<<endl;
-
                 eventHandled = true;
             }
         }
@@ -645,19 +643,14 @@ bool A3::mouseMoveEvent (
         if ( m_interaction_mode == 'J' ) {
 
             if( m_middle_mouse_key_down ) {
-                for( auto node: m_selected_joints ) {
-                    node->rotate( 'x', delta_y/50*2*3.1415926 );
-                    eventHandled = true;
+                if ( m_cmd_index > 0 ) {
+                    m_cmds[ m_cmd_index-1 ].update( 'x', delta_y/50*2*3.1415926 );
                 }
             }
 
             if( m_right_mouse_key_down ) {
-                for( auto node: m_selected_joints ) {
-                    if ( node->m_name == "upper_neck_joint" ) {
-                        auto head = node->children.front();
-                        head->rotate( 'y', delta_x/50*2*3.1415926 );
-                        eventHandled = true;
-                    }
+                if ( m_cmd_index > 0 ) {
+                    m_cmds[ m_cmd_index-1 ].update( 'y', delta_x/50*2*3.1415926 );
                 }
             }
         }
@@ -780,11 +773,28 @@ bool A3::mouseButtonInputEvent (
 
                     }
                 }
-
                 m_do_picking = false;
-
                 CHECK_GL_ERRORS;
             }
+
+
+            if ( m_selected_joints.size() != 0 ) {
+                if ( ( button == GLFW_MOUSE_BUTTON_MIDDLE
+                        || button == GLFW_MOUSE_BUTTON_RIGHT )
+                      && actions == GLFW_PRESS ) {
+
+                    while ( m_cmds.size() > m_cmd_index ) {
+                        m_cmds.pop_back();
+                    }
+
+                    RotCommand cmd( m_selected_joints );
+                    m_cmds.push_back( cmd );
+                    m_cmd_index += 1;
+                    eventHandled = true;
+                }
+
+            }
+
         }
 
     }
@@ -888,7 +898,8 @@ void A3::resetOrientation() {
 }
 
 void A3::resetJoints() {
-
+    m_cmd_index = 0;
+    m_cmds.clear();
 }
 
 void A3::resetAll() {
@@ -904,8 +915,67 @@ void A3::resetAll() {
     m_z_buffer = true;
     m_backface_culling = false;
     m_frontface_culling = false;
+
+    m_cmd_index = 0;
 }
 void A3::undo() {
+    if ( m_cmd_index > 0 ) {
+        m_cmd_index -= 1;
+        m_cmds[ m_cmd_index ].undo();
+    }
 }
 void A3::redo() {
+    if ( m_cmd_index < m_cmds.size() ) {
+        m_cmds[ m_cmd_index ].redo();
+        m_cmd_index += 1;
+    }
+}
+
+
+RotCommand::RotCommand( std::set<SceneNode*> nodes, char axis, float angle ) {
+    for ( auto node : nodes ) {
+        mat4 M = node->trans;
+        m_node.push_back( node );
+        m_initial.push_back( M );
+        m_final.push_back( M );
+    }
+    update( axis, angle );
+}
+
+RotCommand::RotCommand( std::set<SceneNode*> nodes ) {
+    for ( auto node : nodes ) {
+        mat4 M = node->trans;
+        m_node.push_back( node );
+        m_initial.push_back( M );
+        m_final.push_back( M );
+    }
+}
+
+void RotCommand::update( char axis, float angle ) {
+    if ( axis == 'y' ) {
+        for ( int i=0; i<m_node.size(); i++ ) {
+            if ( m_node[i]->m_name == "upper_neck_joint" ) {
+                auto head = m_node[i]->children.front();
+                head->rotate( 'y', angle);
+                break;
+            }
+        }
+    } else {
+        for ( int i=0; i<m_node.size(); i++ ) {
+            m_node[i]->rotate( axis, angle );
+            m_final[i] = m_node[i]->get_transform();
+        }
+    }
+}
+
+void RotCommand::redo() {
+    for ( int i=0; i<m_node.size(); i++ ) {
+        m_node[i]->set_transform( m_final[i] );
+    }
+}
+
+void RotCommand::undo() {
+    for ( int i=0; i<m_node.size(); i++ ) {
+        m_node[i]->set_transform( m_initial[i] );
+    }
 }
