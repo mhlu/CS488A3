@@ -67,10 +67,16 @@ protected:
     char m_interaction_mode;
     float m_mouse_x;
     float m_mouse_y;
+
     bool m_left_mouse_key_down;
     bool m_middle_mouse_key_down;
     bool m_right_mouse_key_down;
     bool m_do_picking;
+
+    bool m_z_buffer;
+    bool m_display_arc;
+    bool m_backface_culling;
+    bool m_frontface_culling;
 
     std::set<JointNode*> m_selected_joints;
 

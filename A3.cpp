@@ -339,27 +339,36 @@ void A3::guiLogic()
     ImGuiWindowFlags windowFlags(ImGuiWindowFlags_AlwaysAutoResize);
     float opacity(0.5f);
 
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("Application")) {
+            if (ImGui::MenuItem("Reset Position",    "I")) { resetPosition(); }
+            if (ImGui::MenuItem("Reset Orientation", "O")) { resetOrientation(); }
+            if (ImGui::MenuItem("Reset Joints",      "N")) { resetJoints(); }
+            if (ImGui::MenuItem("Reset All",         "A")) { resetAll(); }
+            if (ImGui::MenuItem("Quit",              "Q")) { glfwSetWindowShouldClose(m_window, GL_TRUE); }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::MenuItem("Undo", "U")) { undo(); }
+            if (ImGui::MenuItem("Redo", "R")) { redo(); }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Options")) {
+            if (ImGui::MenuItem("Circle",            "C", &m_display_arc, true)) {}
+            if (ImGui::MenuItem("Z-buffer",          "Z", &m_z_buffer, true)) {}
+            if (ImGui::MenuItem("Backface culling",  "B", &m_backface_culling, true)) {}
+            if (ImGui::MenuItem("Frontface culling", "F", &m_frontface_culling, true)) {}
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
     ImGui::Begin("Properties", &showDebugWindow, ImVec2(100,100), opacity,
             windowFlags);
 
 
-        // Add more gui elements here here ...
-        ImGui::Text( "\n -- Application -- " );
-        if( ImGui::Button( "Reset Position (I)" ) ) { resetPosition(); }
-        if( ImGui::Button( "Reset Orientation (O)" ) ) { resetOrientation(); }
-        if( ImGui::Button( "Reset Joints (N)" ) ) { resetJoints(); }
-        if( ImGui::Button( "Reset All(A)" ) ) { resetAll(); }
-        if( ImGui::Button( "Quit Application" ) ) { glfwSetWindowShouldClose(m_window, GL_TRUE); }
-
-        ImGui::Text( "\n -- Edit -- " );
-        if( ImGui::Button( "Undo (U)" ) ) { undo(); }
-        if( ImGui::Button( "Redo (R)" ) ) { redo(); }
-
-        ImGui::Text( "\n -- Options -- " );
-        if( ImGui::Button( "Circle (C)" ) ) { undo(); }
-        if( ImGui::Button( "Z-buffer(Z)" ) ) { undo(); }
-        if( ImGui::Button( "Backface culling (B)" ) ) { undo(); }
-        if( ImGui::Button( "Frontface culling (F)" ) ) { undo(); }
 
         ImGui::Text( "\n -- Interaction Mode -- " );
         if ( ImGui::RadioButton( "Position/Orientation (P)", &interaction_radio, 0 ) ) {
@@ -441,12 +450,34 @@ static void updateShaderUniforms(
  */
 void A3::draw() {
 
-    glEnable( GL_DEPTH_TEST );
+    if ( m_z_buffer ) {
+        glEnable( GL_DEPTH_TEST );
+    }
+
+    if ( m_frontface_culling && m_backface_culling ) {
+        glEnable( GL_CULL_FACE );
+        glCullFace( GL_FRONT_AND_BACK );
+
+    } else if ( m_frontface_culling ) {
+        glEnable( GL_CULL_FACE );
+        glCullFace( GL_FRONT );
+
+    } else if ( m_backface_culling ) {
+        glEnable( GL_CULL_FACE );
+        glCullFace( GL_BACK );
+    } else {
+        glDisable( GL_CULL_FACE );
+    }
+
     renderSceneGraph(*m_rootNode);
 
-
+    // is disable idempotent?
     glDisable( GL_DEPTH_TEST );
-    renderArcCircle();
+    glDisable( GL_CULL_FACE );
+
+    if ( m_display_arc ) {
+        renderArcCircle();
+    }
 }
 
 void A3::renderSceneGraph(const SceneNode &root) {
@@ -798,7 +829,6 @@ bool A3::keyInputEvent (
         }
 
     }
-    // Fill in with event handling code...
 
     return eventHandled;
 }
@@ -823,6 +853,11 @@ void A3::resetAll() {
     resetPosition();
     if ( m_sphereNode != nullptr ) resetOrientation();
     resetJoints();
+
+    m_display_arc = false;
+    m_z_buffer = true;
+    m_backface_culling = false;
+    m_frontface_culling = false;
 }
 void A3::undo() {
 }
