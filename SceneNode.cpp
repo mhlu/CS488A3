@@ -89,7 +89,7 @@ SceneNode* SceneNode::get_child_by_id(unsigned int id) {
         return this;
 
     SceneNode* res = nullptr;
-    for ( SceneNode* child : children ) {
+    for ( auto child : children ) {
         res = child->get_child_by_id( id );
         if ( res != nullptr )
             break;

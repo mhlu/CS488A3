@@ -35,7 +35,7 @@ public:
     SceneNode* get_child_by_id( unsigned int id );
 
     //-- Transformations:
-    void rotate(char axis, float angle);
+    virtual void rotate(char axis, float angle);
     void scale(const glm::vec3& amount);
     void translate(const glm::vec3& amount);
 

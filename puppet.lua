@@ -55,7 +55,7 @@ head_geo:set_material( green )
 -- shoulder + arms ----------------------------------------------------------------
 function get_arm( name )
 
-    shoulder_joint = gr.joint( name .. '_shoulder_joint', {-45, 0, 45}, {0, 0, 0} )
+    shoulder_joint = gr.joint( name .. '_shoulder_joint', {-90, 0, 0}, {0, 0, 0} )
 
     upper_arm_geo = gr.mesh( 'sphere', name .. '_upper_arm_geo' )
     shoulder_joint:add_child( upper_arm_geo )
@@ -71,7 +71,7 @@ function get_arm( name )
     elbow_geo:set_material( blue )
     elbow_geo:translate( 0, -0.5, 0 )
 
-    elbow_joint = gr.joint( name .. '_elbow_joint', {-45, 0, 45}, {0, 0, 0} )
+    elbow_joint = gr.joint( name .. '_elbow_joint', {-120, 0, 0}, {0, 0, 0} )
     elbow_geo:add_child( elbow_joint )
 
     lower_arm_geo = gr.mesh( 'sphere', name .. '_lower_arm_geo' )
@@ -137,7 +137,7 @@ hip_geo:translate( 0, -0.5, 0 )
 
 
 function get_leg( name )
-    hip_joint = gr.joint( name .. '_hip_joint', {-45, 0, 45}, {0, 0, 0} )
+    hip_joint = gr.joint( name .. '_hip_joint', {-90, 0, 20}, {0, 0, 0} )
 
     upper_leg_geo = gr.mesh( 'sphere', name ..'_upper_leg_geo' )
     hip_joint:add_child( upper_leg_geo )
@@ -153,7 +153,7 @@ function get_leg( name )
     knee_geo:set_material( blue )
     knee_geo:translate( 0, -0.5, 0 )
 
-    knee_joint = gr.joint( name .. '_knee_joint', {-45, 0, 45}, {0, 0, 0} )
+    knee_joint = gr.joint( name .. '_knee_joint', {0, 0, 120}, {0, 0, 0} )
     knee_geo:add_child( knee_joint )
 
     lower_leg_geo = gr.mesh( 'sphere', name .. '_lower_leg_geo' )
@@ -171,7 +171,7 @@ function get_leg( name )
     ankle_geo:translate( 0, -0.8, 0 )
 
 
-    ankle_joint = gr.joint( name .. '_ankle_joint', {-45, 0, 45}, {0, 0, 0} )
+    ankle_joint = gr.joint( name .. '_ankle_joint', {-90, -80, 0}, {0, 0, 0} )
     ankle_geo:add_child( ankle_joint )
 
     foot_geo = gr.mesh( 'sphere', name .. '_foot_geo' )

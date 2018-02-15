@@ -593,6 +593,16 @@ bool A3::mouseMoveEvent (
                 m_sphereNode->rotate('y', delta_x);
                 m_sphereNode->rotate('x', delta_y);
             }
+        }
+
+        if ( m_interaction_mode == 'J' ) {
+
+            if( m_middle_mouse_key_down ) {
+                for( auto node: m_selected_joints ) {
+                    node->rotate( delta_y/50*2*3.1415926 );
+                }
+
+            }
 
         }
 
@@ -774,6 +784,19 @@ bool A3::keyInputEvent (
             glfwSetWindowShouldClose(m_window, GL_TRUE);
             eventHandled = true;
         }
+
+        if ( key == GLFW_KEY_P ) {
+            m_interaction_mode = 'P';
+            interaction_radio = 0;
+            eventHandled = true;
+        }
+
+        if ( key == GLFW_KEY_J ) {
+            m_interaction_mode = 'J';
+            interaction_radio = 1;
+            eventHandled = true;
+        }
+
     }
     // Fill in with event handling code...
 

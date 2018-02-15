@@ -9,6 +9,8 @@ public:
 
     void set_joint_x(double min, double init, double max);
     void set_joint_y(double min, double init, double max);
+    virtual void rotate(char axis, float angle);
+    void rotate( float angle );
 
     struct JointRange {
         double min, init, max;
@@ -16,4 +18,6 @@ public:
 
 
     JointRange m_joint_x, m_joint_y;
+    float m_x_angle;
+    float m_y_angle;
 };
