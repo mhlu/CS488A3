@@ -57,6 +57,7 @@ protected:
     void renderGeometryGraph(const SceneNode *node, glm::mat4 M );
     void renderArcCircle();
 
+    glm::vec3 get_arcball_vector(int x, int y);
     void resetPosition();
     void resetOrientation();
     void resetJoints();

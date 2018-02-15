@@ -23,6 +23,7 @@ const size_t CIRCLE_PTS = 48;
 
 static int interaction_radio = 0;
 
+
 //----------------------------------------------------------------------------------------
 // Constructor
 A3::A3(const std::string & luaSceneFile)
@@ -603,8 +604,6 @@ bool A3::mouseMoveEvent (
 
         float delta_x = xPos - m_mouse_x;
         float delta_y = yPos - m_mouse_y;
-        m_mouse_x = xPos;
-        m_mouse_y = yPos;
 
         if ( m_interaction_mode == 'P' ) {
 
@@ -612,17 +611,34 @@ bool A3::mouseMoveEvent (
                 mat4 trans;
                 trans = glm::translate(trans, vec3(delta_x/250, -delta_y/200, 0));
                 m_view = trans*m_view;
+
+                eventHandled = true;
             }
 
             if( m_middle_mouse_key_down ) {
                 mat4 trans;
                 trans = glm::translate(trans, vec3(0, 0, delta_y/100));
                 m_view = trans*m_view;
+
+                eventHandled = true;
             }
 
             if( m_right_mouse_key_down ) {
-                m_sphereNode->rotate('y', delta_x);
-                m_sphereNode->rotate('x', delta_y);
+                vec3 va = get_arcball_vector( m_mouse_x, m_mouse_y );
+                vec3 vb = get_arcball_vector( xPos,  yPos );
+
+                float angle = acos( std::min(1.0f, dot(va, vb)) ) / 10;
+                vec3 axis_in_camera_coord = cross(va, vb);
+                vec4 axis_in_view_frame( axis_in_camera_coord, 0 );
+                vec4 axis_in_world_frame = inverse( m_view ) * axis_in_view_frame;
+
+                mat4 rot;
+                rot = rotate( rot, degrees(angle), vec3(axis_in_world_frame) );
+                m_sphereNode->trans = rot * m_sphereNode->trans;
+
+                cout<<"rot: "<<rot<<endl;
+
+                eventHandled = true;
             }
         }
 
@@ -631,6 +647,7 @@ bool A3::mouseMoveEvent (
             if( m_middle_mouse_key_down ) {
                 for( auto node: m_selected_joints ) {
                     node->rotate( 'x', delta_y/50*2*3.1415926 );
+                    eventHandled = true;
                 }
             }
 
@@ -639,10 +656,15 @@ bool A3::mouseMoveEvent (
                     if ( node->m_name == "upper_neck_joint" ) {
                         auto head = node->children.front();
                         head->rotate( 'y', delta_x/50*2*3.1415926 );
+                        eventHandled = true;
                     }
                 }
             }
         }
+
+
+        m_mouse_x = xPos;
+        m_mouse_y = yPos;
 
     }
 
@@ -836,6 +858,25 @@ bool A3::keyInputEvent (
     }
 
     return eventHandled;
+}
+
+// procedure refering
+// https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
+vec3 A3::get_arcball_vector( int x, int y ) {
+
+    vec3 P( 1.0 * x/m_windowWidth*2 - 1.0,
+            1.0 * y/m_windowHeight*2 - 1.0,
+            0);
+
+    P.y = -P.y;
+
+    float OP_squared = P.x * P.x + P.y * P.y;
+    if (OP_squared <= 1*1) {
+        P.z = sqrt(1*1 - OP_squared);  // Pythagore
+    } else {
+        P = glm::normalize(P);  // nearest point
+    }
+    return P;
 }
 
 void A3::resetPosition() {
